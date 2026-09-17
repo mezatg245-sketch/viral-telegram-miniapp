@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0a10">
+  <title>ViralLoop</title>
+  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+  <script src="config.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">▶</div>
+      <div>
+        <strong>ViralLoop</strong>
+        <small>Daily viral drops</small>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="langBtn" class="icon-btn" aria-label="Language">አማ</button>
+      <button id="themeBtn" class="icon-btn" aria-label="Theme">☾</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <span class="eyebrow">TRENDING NOW</span>
+        <h1 id="heroTitle">Your next obsession is one tap away.</h1>
+        <p id="heroSub">Watch the drop, react, and discover the next one.</p>
+      </div>
+      <div class="pulse-widget">
+        <span class="pulse-dot"></span>
+        <span id="liveText">LIVE FEED</span>
+      </div>
+    </section>
+
+    <section class="stats-row">
+      <div class="mini-stat"><b id="videoCount">—</b><span>drops</span></div>
+      <div class="mini-stat"><b id="viewCount">—</b><span>views</span></div>
+      <div class="mini-stat"><b id="streak">1</b><span>day streak</span></div>
+    </section>
+
+    <section id="adblockBox" class="notice hidden">
+      <div class="notice-icon">🛡️</div>
+      <div>
+        <b id="adblockTitle">Ad blocker detected</b>
+        <p id="adblockText">Please allow ads for this Mini App. Ads keep the feed free.</p>
+      </div>
+    </section>
+
+    <section class="feed-head">
+      <div>
+        <span class="eyebrow">FOR YOU</span>
+        <h2>Fresh drops</h2>
+      </div>
+      <button id="refreshBtn" class="ghost-btn">↻</button>
+    </section>
+
+    <div id="feed" class="feed"></div>
+    <div id="empty" class="empty hidden">
+      <div class="empty-orb">✦</div>
+      <h3>New drops are loading</h3>
+      <p>Come back soon for the next viral video.</p>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active"><span>⌂</span><small>Home</small></button>
+    <button class="nav-item" id="popularBtn"><span>✦</span><small>Popular</small></button>
+    <button class="nav-item" id="infoBtn"><span>i</span><small>Info</small></button>
+  </nav>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <button id="closeModal" class="close">×</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
