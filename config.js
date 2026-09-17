@@ -1,6 +1,6 @@
 window.APP_CONFIG = {
-  APP_NAME: "ViralLoop",
-  API_BASE: "https://YOUR-WORKER.workers.dev",
+  APP_NAME: "viral-telegram-miniapp",
+  API_BASE: "https://viral-telegram-miniapp.mezatg245.workers.dev/",
 
   // Put the Rewarded block ID from your AdsGram publisher account here.
   ADS_GRAM_BLOCK_ID: "YOUR_ADSGRAM_BLOCK_ID",
