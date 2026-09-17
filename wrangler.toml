@@ -1,4 +1,6 @@
-name = "viral-loop-db"
+# wrangler.toml
+name = 'viral-telegram-miniapp'
+#name = "viral-loop-db"
 main = "worker.js"
 compatibility_date = "2026-09-01"
 
