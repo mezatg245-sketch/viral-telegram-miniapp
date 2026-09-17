@@ -1,90 +1,816 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#0b0a10">
-  <title>ViralLoop</title>
-  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
-  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-  <script src="config.js"></script>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Zena — Viral Clips</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;700&family=Noto+Sans+Ethiopic:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#0B0E14;
+    --surface:#151A24;
+    --surface-raised:#1D2330;
+    --text-primary:#F5F3EE;
+    --text-muted:#8A93A3;
+    --accent:#F5A623;
+    --accent-ink:#231A05;
+    --mint:#33D6A6;
+    --danger:#FF5D5D;
+    --hairline:rgba(245,243,238,0.09);
+    --scrim:rgba(6,8,12,0.82);
+    --radius-lg:22px;
+    --radius-md:14px;
+    --font-ui:'Sora','Noto Sans Ethiopic',sans-serif;
+    --font-body:'Manrope','Noto Sans Ethiopic',sans-serif;
+  }
+  html[data-theme="light"]{
+    --bg-void:#F7F5F0;
+    --surface:#FFFFFF;
+    --surface-raised:#FFFFFF;
+    --text-primary:#171A21;
+    --text-muted:#6B7280;
+    --accent:#E08A00;
+    --accent-ink:#FFF6E6;
+    --hairline:rgba(23,26,33,0.10);
+    --scrim:rgba(20,20,18,0.72);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg-void); color:var(--text-primary);
+    font-family:var(--font-body);
+    overscroll-behavior:none;
+    -webkit-user-select:none; user-select:none;
+    transition:background .25s ease, color .25s ease;
+  }
+  html[lang="am"] body{ font-family:'Noto Sans Ethiopic','Manrope',sans-serif; }
+
+  .app{ position:relative; height:100dvh; width:100%; max-width:560px; margin:0 auto; overflow:hidden; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:absolute; top:0; left:0; right:0; z-index:30;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:calc(env(safe-area-inset-top,0px) + 12px) 14px 10px;
+    background:linear-gradient(180deg, rgba(6,8,12,.55), transparent);
+    pointer-events:none;
+  }
+  .topbar *{ pointer-events:auto; }
+  .progress-dots{ display:flex; gap:6px; }
+  .progress-dots span{
+    width:26px; height:5px; border-radius:3px; background:rgba(255,255,255,0.25);
+    overflow:hidden; position:relative;
+  }
+  .progress-dots span.done{ background:var(--accent); }
+  .icon-row{ display:flex; gap:8px; }
+  .icon-btn{
+    width:36px; height:36px; border-radius:50%; border:none;
+    background:rgba(21,26,36,0.55); color:var(--text-primary);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; cursor:pointer; backdrop-filter:blur(6px);
+  }
+
+  /* ---------- Feed ---------- */
+  .feed{
+    height:100%; overflow-y:scroll; scroll-snap-type:y mandatory;
+    scrollbar-width:none;
+  }
+  .feed::-webkit-scrollbar{ display:none; }
+  .card{
+    height:100dvh; scroll-snap-align:start; position:relative;
+    display:flex; align-items:flex-end;
+    background:#000;
+  }
+  .card video{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+  }
+  .card::after{
+    content:""; position:absolute; left:0; right:0; bottom:0; height:45%;
+    background:linear-gradient(180deg, transparent, rgba(4,5,8,0.86));
+    pointer-events:none;
+  }
+  .meta{
+    position:relative; z-index:2; padding:0 16px calc(env(safe-area-inset-bottom,0px) + 26px);
+    width:100%;
+  }
+  .creator{ display:flex; align-items:center; gap:8px; font-family:var(--font-ui); font-weight:700; margin-bottom:6px; }
+  .creator .dot{ width:6px; height:6px; border-radius:50%; background:var(--mint); }
+  .caption{ font-size:14.5px; line-height:1.4; color:#EDEDED; max-width:88%; }
+  .stat-rail{
+    position:absolute; right:10px; bottom:calc(env(safe-area-inset-bottom,0px) + 32px);
+    z-index:2; display:flex; flex-direction:column; gap:18px; align-items:center;
+  }
+  .stat{ display:flex; flex-direction:column; align-items:center; gap:4px; color:#fff; font-size:11.5px; font-family:var(--font-ui); }
+  .stat button{
+    width:44px; height:44px; border-radius:50%; border:none; background:rgba(21,26,36,0.55);
+    color:#fff; font-size:19px; backdrop-filter:blur(6px);
+  }
+
+  /* ---------- Bottom nav ---------- */
+  /* ---------- Ad gate ---------- */
+  .gate, .blocker{
+    position:absolute; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
+    background:var(--scrim); backdrop-filter:blur(3px); padding:24px;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .gate.show, .blocker.show{ opacity:1; pointer-events:auto; }
+  .sheet{
+    width:100%; max-width:380px; background:var(--surface-raised);
+    border-radius:var(--radius-lg); padding:26px 22px 22px; text-align:center;
+    border:1px solid var(--hairline);
+  }
+  .sheet .glyph-lg{ font-size:34px; margin-bottom:10px; display:block; }
+  .sheet h2{ font-family:var(--font-ui); font-size:19px; margin:0 0 8px; }
+  .sheet p{ color:var(--text-muted); font-size:13.5px; line-height:1.5; margin:0 0 18px; }
+  .ad-track{ display:flex; gap:8px; justify-content:center; margin-bottom:18px; }
+  .ad-track .pip{
+    width:34px; height:34px; border-radius:10px; border:1.5px dashed var(--hairline);
+    display:flex; align-items:center; justify-content:center; font-family:var(--font-ui);
+    font-weight:700; font-size:13px; color:var(--text-muted);
+  }
+  .ad-track .pip.done{ border-style:solid; border-color:var(--mint); color:var(--mint); background:rgba(51,214,166,0.08); }
+  .ad-track .pip.active{ border-color:var(--accent); color:var(--accent); }
+  .btn-primary{
+    width:100%; padding:14px; border:none; border-radius:14px; font-family:var(--font-ui);
+    font-weight:700; font-size:15px; background:var(--accent); color:var(--accent-ink);
+    cursor:pointer;
+  }
+  .btn-primary:disabled{ opacity:.5; }
+  .btn-ghost{
+    width:100%; padding:12px; margin-top:10px; border:none; background:none;
+    color:var(--text-muted); font-family:var(--font-ui); font-size:13px; cursor:pointer;
+  }
+  .network-tag{ font-size:11px; color:var(--text-muted); margin-top:14px; }
+
+  .blocker .sheet{ border-color:rgba(255,93,93,.35); }
+  .blocker .glyph-lg{ color:var(--danger); }
+
+  .state-screen{
+    position:absolute; inset:0; z-index:20; display:none; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:30px;
+    background:var(--bg-void);
+  }
+  .state-screen.show{ display:flex; }
+  .state-screen .glyph-lg{ font-size:34px; margin-bottom:10px; }
+  .state-screen h2{ font-family:var(--font-ui); font-size:17px; margin:0 0 6px; }
+  .state-screen p{ color:var(--text-muted); font-size:13.5px; margin:0; max-width:260px; }
+  .spinner{
+    width:30px; height:30px; border-radius:50%; border:3px solid var(--hairline);
+    border-top-color:var(--accent); animation:spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ---------- Skeleton loader ---------- */
+  .skeleton-card{ position:absolute; inset:0; display:flex; align-items:flex-end; padding:0 16px 90px; }
+  .skeleton-card .sk-caption{ width:100%; }
+  .sk-line{
+    height:11px; border-radius:6px; margin-bottom:9px;
+    background:linear-gradient(90deg, var(--surface) 0%, var(--surface-raised) 50%, var(--surface) 100%);
+    background-size:200% 100%; animation:shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes shimmer{ 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
+
+  /* ---------- Streak pill ---------- */
+  .streak-pill{
+    display:flex; align-items:center; gap:4px; padding:5px 10px 5px 8px; border-radius:999px;
+    background:rgba(21,26,36,0.55); backdrop-filter:blur(6px); font-family:var(--font-ui);
+    font-weight:700; font-size:12px; color:#fff; opacity:0; transform:translateY(-6px) scale(.9);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .streak-pill.show{ opacity:1; transform:translateY(0) scale(1); }
+  .streak-pill.bump{ animation:pillBump .38s ease; }
+  @keyframes pillBump{ 0%{ transform:scale(1); } 35%{ transform:scale(1.22); } 100%{ transform:scale(1); } }
+
+  /* ---------- Swipe hint ---------- */
+  .swipe-hint{
+    position:absolute; left:50%; bottom:110px; z-index:15; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:3px; color:#fff;
+    font-family:var(--font-ui); font-size:11.5px; font-weight:600; pointer-events:none;
+    opacity:0; transition:opacity .3s ease; text-shadow:0 1px 6px rgba(0,0,0,.5);
+  }
+  .swipe-hint.show{ opacity:.85; }
+  .swipe-hint .arrow{ font-size:20px; animation:hintBounce 1.4s ease-in-out infinite; }
+  @keyframes hintBounce{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-9px); } }
+
+  /* ---------- Double-tap heart burst ---------- */
+  .heart-burst{
+    position:absolute; z-index:16; font-size:70px; pointer-events:none;
+    transform:translate(-50%,-50%) scale(0.4); opacity:0; filter:drop-shadow(0 4px 10px rgba(0,0,0,.35));
+  }
+  .heart-burst.play{ animation:heartPop .75s cubic-bezier(.2,1.4,.4,1) forwards; }
+  @keyframes heartPop{
+    0%{ transform:translate(-50%,-50%) scale(0.3); opacity:0; }
+    30%{ transform:translate(-50%,-50%) scale(1.15); opacity:1; }
+    55%{ transform:translate(-50%,-50%) scale(0.95); opacity:1; }
+    100%{ transform:translate(-50%,-50%) scale(0.9); opacity:0; }
+  }
+  .like-particle{
+    position:absolute; z-index:16; font-size:16px; pointer-events:none; opacity:1;
+    animation:floatUp 1s ease-out forwards;
+  }
+  @keyframes floatUp{
+    0%{ transform:translate(0,0) scale(0.6); opacity:1; }
+    100%{ transform:translate(var(--dx,0px),-90px) scale(1.1); opacity:0; }
+  }
+
+  /* ---------- Card entrance ---------- */
+  .card{ opacity:0; transform:scale(0.97); transition:opacity .35s ease, transform .5s ease; }
+  .card.in-view{ opacity:1; transform:scale(1); }
+
+  /* ---------- Reward toast + confetti ---------- */
+  .reward-toast{
+    position:absolute; top:18%; left:50%; z-index:70; transform:translate(-50%,-14px);
+    display:flex; align-items:center; gap:8px; padding:11px 18px; border-radius:999px;
+    background:var(--mint); color:#04221A; font-family:var(--font-ui); font-weight:800; font-size:14px;
+    opacity:0; pointer-events:none; box-shadow:0 10px 26px rgba(0,0,0,.28);
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .reward-toast.show{ opacity:1; transform:translate(-50%,0); }
+  #confettiCanvas{ position:absolute; inset:0; z-index:65; pointer-events:none; }
+
+  /* ---------- Gate ring ---------- */
+  .ring-wrap{ position:relative; width:64px; height:64px; margin:0 auto 16px; }
+  .ring-wrap svg{ transform:rotate(-90deg); }
+  .ring-track{ fill:none; stroke:var(--hairline); stroke-width:5; }
+  .ring-fill{
+    fill:none; stroke:var(--accent); stroke-width:5; stroke-linecap:round;
+    stroke-dasharray:163; stroke-dashoffset:163; transition:stroke-dashoffset .25s linear;
+  }
+  .ring-wrap .ring-icon{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:22px;
+  }
+  .ring-wrap.playing .ring-icon{ animation:ringPulse 1s ease-in-out infinite; }
+  @keyframes ringPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
+
+  [dir="rtl"]{ direction:rtl; }
+</style>
 </head>
 <body>
-  <div class="ambient ambient-a"></div>
-  <div class="ambient ambient-b"></div>
+<div class="app" id="app">
 
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">▶</div>
-      <div>
-        <strong>ViralLoop</strong>
-        <small>Daily viral drops</small>
-      </div>
+  <div class="topbar">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <div class="progress-dots" id="progressDots"></div>
+      <div class="streak-pill" id="streakPill">🔥 <span id="streakCount">0</span></div>
     </div>
-    <div class="top-actions">
-      <button id="langBtn" class="icon-btn" aria-label="Language">አማ</button>
-      <button id="themeBtn" class="icon-btn" aria-label="Theme">☾</button>
-    </div>
-  </header>
-
-  <main>
-    <section class="hero">
-      <div>
-        <span class="eyebrow">TRENDING NOW</span>
-        <h1 id="heroTitle">Your next obsession is one tap away.</h1>
-        <p id="heroSub">Watch the drop, react, and discover the next one.</p>
-      </div>
-      <div class="pulse-widget">
-        <span class="pulse-dot"></span>
-        <span id="liveText">LIVE FEED</span>
-      </div>
-    </section>
-
-    <section class="stats-row">
-      <div class="mini-stat"><b id="videoCount">—</b><span>drops</span></div>
-      <div class="mini-stat"><b id="viewCount">—</b><span>views</span></div>
-      <div class="mini-stat"><b id="streak">1</b><span>day streak</span></div>
-    </section>
-
-    <section id="adblockBox" class="notice hidden">
-      <div class="notice-icon">🛡️</div>
-      <div>
-        <b id="adblockTitle">Ad blocker detected</b>
-        <p id="adblockText">Please allow ads for this Mini App. Ads keep the feed free.</p>
-      </div>
-    </section>
-
-    <section class="feed-head">
-      <div>
-        <span class="eyebrow">FOR YOU</span>
-        <h2>Fresh drops</h2>
-      </div>
-      <button id="refreshBtn" class="ghost-btn">↻</button>
-    </section>
-
-    <div id="feed" class="feed"></div>
-    <div id="empty" class="empty hidden">
-      <div class="empty-orb">✦</div>
-      <h3>New drops are loading</h3>
-      <p>Come back soon for the next viral video.</p>
-    </div>
-  </main>
-
-  <nav class="bottom-nav">
-    <button class="nav-item active"><span>⌂</span><small>Home</small></button>
-    <button class="nav-item" id="popularBtn"><span>✦</span><small>Popular</small></button>
-    <button class="nav-item" id="infoBtn"><span>i</span><small>Info</small></button>
-  </nav>
-
-  <div id="modal" class="modal hidden">
-    <div class="modal-card">
-      <button id="closeModal" class="close">×</button>
-      <div id="modalContent"></div>
+    <div class="icon-row">
+      <button class="icon-btn" id="langToggle" aria-label="Language">EN</button>
+      <button class="icon-btn" id="themeToggle" aria-label="Theme">🌙</button>
     </div>
   </div>
 
-  <div id="toast" class="toast"></div>
-  <script src="app.js"></script>
+  <div class="feed" id="feed"></div>
+  <div class="swipe-hint" id="swipeHint"><span class="arrow">↑</span><span data-i18n="swipeHint">Keep swiping</span></div>
+
+  <div class="state-screen" id="loadingState">
+    <div class="skeleton-card">
+      <div class="sk-caption">
+        <div class="sk-line" style="width:40%;"></div>
+        <div class="sk-line" style="width:75%;"></div>
+        <div class="sk-line" style="width:55%;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="state-screen" id="emptyState">
+    <span class="glyph-lg">📭</span>
+    <h2 data-i18n="emptyTitle">No clips yet</h2>
+    <p data-i18n="emptyBody">New content drops soon — check back shortly.</p>
+  </div>
+
+  <div class="stat-rail" id="statRail">
+    <div class="stat"><button id="likeBtn">♥</button><span id="likeCount">12.4k</span></div>
+    <div class="stat"><button>↗</button><span data-i18n="share">Share</span></div>
+  </div>
+
+  <canvas id="confettiCanvas"></canvas>
+  <div class="reward-toast" id="rewardToast">🎉 <span data-i18n="rewardText">Unlocked! Enjoy the clip</span></div>
+
+  <!-- Ad gate -->
+  <div class="gate" id="gate">
+    <div class="sheet">
+      <div class="ring-wrap" id="ringWrap">
+        <svg width="64" height="64" viewBox="0 0 60 60">
+          <circle class="ring-track" cx="30" cy="30" r="26"></circle>
+          <circle class="ring-fill" id="ringFill" cx="30" cy="30" r="26"></circle>
+        </svg>
+        <div class="ring-icon" id="ringIcon">🎬</div>
+      </div>
+      <h2 data-i18n="gateTitle">Watch to keep scrolling</h2>
+      <p data-i18n="gateBody">This clip is unlocked by our sponsors. Watch a short ad to continue — free, always.</p>
+      <div class="ad-track" id="adTrack"></div>
+      <button class="btn-primary" id="watchAdBtn" data-i18n="watchAd">Watch ad 1 of 2</button>
+      <div class="network-tag" id="networkTag">via Adsgram</div>
+    </div>
+  </div>
+
+  <!-- Ad-blocker wall -->
+  <div class="blocker" id="blocker">
+    <div class="sheet">
+      <span class="glyph-lg">🛡️</span>
+      <h2 data-i18n="blockTitle">Ad blocker detected</h2>
+      <p data-i18n="blockBody">Zena is free because sponsors cover the cost. Please disable your ad blocker for this site, then tap retry.</p>
+      <button class="btn-primary" id="retryBtn" data-i18n="retry">I've turned it off — Retry</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ================= i18n ================= */
+const STRINGS = {
+  en: {
+    share:"Share",
+    gateTitle:"Watch to keep scrolling",
+    gateBody:"This clip is unlocked by our sponsors. Watch a short ad to continue — free, always.",
+    watchAd:(n)=>`Watch ad ${n} of 2`,
+    watching:"Playing ad…",
+    unlocked:"Unlocked! Enjoy the clip",
+    blockTitle:"Ad blocker detected",
+    blockBody:"Zena is free because sponsors cover the cost. Please disable your ad blocker for this site, then tap retry.",
+    retry:"I've turned it off — Retry",
+    emptyTitle:"No clips yet",
+    emptyBody:"New content drops soon — check back shortly.",
+    swipeHint:"Keep swiping",
+    rewardText:"Unlocked! Enjoy the clip",
+    streakToast:(n)=>`🔥 ${n}-clip streak!`,
+  },
+  am: {
+    share:"አጋራ",
+    gateTitle:"ለመቀጠል ማስታወቂያ ይመልከቱ",
+    gateBody:"ይህ ክሊፕ በስፖንሰሮቻችን የተከፈተ ነው። ለመቀጠል አጭር ማስታወቂያ ይመልከቱ — ሁልጊዜ ነጻ ነው።",
+    watchAd:(n)=>`ማስታወቂያ ${n} ከ2 ይመልከቱ`,
+    watching:"ማስታወቂያ በመጫወት ላይ…",
+    unlocked:"ተከፍቷል! ክሊፑን ይደሰቱ",
+    blockTitle:"የማስታወቂያ ማገጃ ተገኝቷል",
+    blockBody:"ዜና ነጻ የሆነው ስፖንሰሮች ስለሚሸፍኑት ነው። እባክዎ ለዚህ ገጽ የማስታወቂያ ማገጃዎን ያጥፉ፣ ከዚያ 'ደግመው ይሞክሩ' የሚለውን ይጫኑ።",
+    retry:"አጥፍቻለሁ — ደግመው ይሞክሩ",
+    emptyTitle:"እስካሁን ክሊፖች የሉም",
+    emptyBody:"አዲስ ይዘት በቅርቡ ይመጣል — ትንሽ ቆይተው ይመልከቱ።",
+    swipeHint:"መንሸራተትዎን ይቀጥሉ",
+    rewardText:"ተከፍቷል! ክሊፑን ይደሰቱ",
+    streakToast:(n)=>`🔥 የ${n}-ክሊፕ ተከታታይ!`,
+  }
+};
+let lang = localStorage.getItem('zena_lang') || 'en';
+
+function applyI18n(){
+  document.documentElement.lang = lang;
+  document.documentElement.dir = 'ltr'; // Amharic is LTR too
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    const val = STRINGS[lang][key];
+    if (typeof val === 'string') el.textContent = val;
+  });
+  document.getElementById('langToggle').textContent = lang === 'en' ? 'EN' : 'አማ';
+  renderGateButton();
+}
+
+document.getElementById('langToggle').addEventListener('click', ()=>{
+  lang = lang === 'en' ? 'am' : 'en';
+  localStorage.setItem('zena_lang', lang);
+  applyI18n();
+});
+
+/* ================= Theme ================= */
+let theme = localStorage.getItem('zena_theme') || (window.Telegram?.WebApp?.colorScheme) || 'dark';
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeToggle').textContent = theme === 'dark' ? '🌙' : '☀️';
+}
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  theme = theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('zena_theme', theme);
+  applyTheme();
+});
+
+/* ================= Telegram WebApp bootstrap ================= */
+const tg = window.Telegram?.WebApp;
+if (tg){ tg.ready(); tg.expand(); tg.setHeaderColor?.(theme==='dark' ? '#0B0E14' : '#F7F5F0'); }
+
+/* ================= Ad network layer =================
+   Each adapter exposes: load() -> Promise, show() -> Promise<{revenue, network}>
+   Replace the stub logic in Adsgram/AdNetworkB with real SDK calls once you have
+   publisher IDs. See README for exact wiring instructions. */
+const AD_NETWORKS = [
+  {
+    id:'adsgram',
+    label:'Adsgram',
+    ecpm: 4.20, // USD per 1000 views — put your real eCPM from the Adsgram dashboard
+    avgDurationMs: 1800, // rough expected ad length, drives the countdown ring — tune to your real average
+    show(){
+      return new Promise((resolve, reject)=>{
+        // Real integration (once you add your Block ID from Adsgram publisher panel):
+        //   const AdController = window.Adsgram.init({ blockId: "YOUR_BLOCK_ID" });
+        //   AdController.show().then(()=>resolve()).catch(reject);
+        if (window.Adsgram && window.__ADSGRAM_BLOCK_ID__){
+          try{
+            const controller = window.Adsgram.init({ blockId: window.__ADSGRAM_BLOCK_ID__ });
+            controller.show().then(resolve).catch(reject);
+            return;
+          }catch(e){ /* fall through to demo mode */ }
+        }
+        // Demo fallback so the app is fully testable before you add real IDs.
+        setTimeout(resolve, 1800);
+      });
+    }
+  },
+  {
+    id:'monetag',
+    label:'Monetag',
+    ecpm: 3.10,
+    avgDurationMs: 1800,
+    show(){
+      return new Promise((resolve)=>{
+        // Real integration example: window.show_9999999().then(resolve)
+        setTimeout(resolve, 1800);
+      });
+    }
+  }
+];
+
+/* ================= Ad-blocker detection =================
+   Combines a classic "bait div" test with a check for whether the
+   configured ad SDK scripts actually loaded. Either signal alone can
+   false-positive, so we require agreement or a slow-loading bait div. */
+function detectAdBlock(){
+  return new Promise((resolve)=>{
+    const bait = document.createElement('div');
+    bait.className = 'adsbox ad-banner ads advertisement';
+    bait.style.cssText = 'position:absolute;top:-999px;left:-999px;width:1px;height:1px;';
+    document.body.appendChild(bait);
+
+    setTimeout(()=>{
+      const baitBlocked = bait.offsetParent === null || bait.offsetHeight === 0 || bait.clientHeight === 0
+        || getComputedStyle(bait).display === 'none' || getComputedStyle(bait).visibility === 'hidden';
+      bait.remove();
+
+      const sdkMissing = !window.Adsgram && !window.__adNetworkScriptsFailed !== true;
+      // Only trust the bait signal (SDK check is best-effort / informational,
+      // since publishers often haven't wired real IDs yet in dev/testing).
+      resolve(baitBlocked);
+    }, 120);
+  });
+}
+
+const blockerEl = document.getElementById('blocker');
+document.getElementById('retryBtn').addEventListener('click', runAdBlockCheck);
+
+async function runAdBlockCheck(){
+  const blocked = await detectAdBlock();
+  blockerEl.classList.toggle('show', blocked);
+  return !blocked;
+}
+
+/* ================= Revenue logging (local MVP) =================
+   Every completed ad view is appended to localStorage so dashboard.html
+   (same origin) can read it. For real cross-device numbers, swap this
+   for a POST to your own backend — see README "Going beyond localStorage". */
+function logAdRevenue(network){
+  const key = 'zena_revenue_log';
+  const log = JSON.parse(localStorage.getItem(key) || '[]');
+  const net = AD_NETWORKS.find(n=>n.id===network.id);
+  log.push({ ts: Date.now(), network: net.id, ecpm: net.ecpm, revenue: net.ecpm/1000 });
+  localStorage.setItem(key, JSON.stringify(log));
+}
+
+/* ================= Video feed =================
+   Clips are pulled from YOUR own backend (server.js), which in turn mirrors
+   a private/hidden Telegram group or channel. The client never sees the
+   source chat, a chat ID, or an invite link — only /api/videos and
+   /api/stream/:id, both same-origin. See README "Content pipeline". */
+const API_BASE = ''; // same-origin; set to e.g. 'https://your-app.up.railway.app' only if hosted separately
+let VIDEO_SOURCES = [];
+let videosExhausted = false;
+let loadingMore = false;
+
+async function loadVideos({ more=false } = {}){
+  if (loadingMore) return;
+  loadingMore = true;
+  try{
+    const offset = more ? VIDEO_SOURCES.length : 0;
+    const res = await fetch(`${API_BASE}/api/videos?limit=20&offset=${offset}`);
+    if (!res.ok) throw new Error('bad response');
+    const batch = await res.json();
+    if (batch.length === 0) videosExhausted = true;
+    VIDEO_SOURCES = more ? VIDEO_SOURCES.concat(batch) : batch;
+  } catch(e){
+    console.error('Failed to load videos', e);
+    if (!more) VIDEO_SOURCES = [];
+  } finally {
+    loadingMore = false;
+  }
+}
+
+const feedEl = document.getElementById('feed');
+const emptyStateEl = document.getElementById('emptyState');
+const loadingStateEl = document.getElementById('loadingState');
+const dotsEl = document.getElementById('progressDots');
+const gateEl = document.getElementById('gate');
+const adTrackEl = document.getElementById('adTrack');
+const watchAdBtn = document.getElementById('watchAdBtn');
+const networkTagEl = document.getElementById('networkTag');
+
+const ADS_REQUIRED = 2;      // minimum ads to unlock a batch
+const FREE_VIDEOS_FIRST = 1; // first clip is always free
+let unlockedCount = FREE_VIDEOS_FIRST;
+let adsWatchedThisGate = 0;
+let currentAdIndex = 0;
+
+function renderDots(){
+  dotsEl.innerHTML = '';
+  VIDEO_SOURCES.forEach((_, i)=>{
+    const d = document.createElement('span');
+    if (i < unlockedCount) d.classList.add('done');
+    dotsEl.appendChild(d);
+  });
+}
+
+function buildCard(item, index){
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.index = index;
+  card.dataset.likes = item.likes;
+  card.innerHTML = `
+    <video src="${item.streamUrl}" playsinline muted loop preload="metadata"></video>
+    <div class="meta">
+      <div class="creator"><span class="dot"></span>${item.creator}</div>
+      <div class="caption">${item.caption || ''}</div>
+    </div>`;
+  wireDoubleTap(card);
+  return card;
+}
+
+// Double-tap anywhere on a card = like, with a big heart burst + floating
+// particles at the tap point (a light delight touch, not a data-driven feature).
+function wireDoubleTap(card){
+  let lastTap = 0;
+  card.addEventListener('pointerup', (e)=>{
+    const now = Date.now();
+    if (now - lastTap < 300){
+      triggerHeartBurst(card, e.clientX, e.clientY);
+      setLiked(true);
+    }
+    lastTap = now;
+  });
+}
+
+function triggerHeartBurst(container, x, y){
+  const rect = container.getBoundingClientRect();
+  const localX = x - rect.left, localY = y - rect.top;
+  const heart = document.createElement('div');
+  heart.className = 'heart-burst play';
+  heart.textContent = '❤️';
+  heart.style.left = localX + 'px';
+  heart.style.top = localY + 'px';
+  container.appendChild(heart);
+  heart.addEventListener('animationend', ()=>heart.remove());
+  for (let i=0; i<5; i++){
+    const p = document.createElement('div');
+    p.className = 'like-particle';
+    p.textContent = '❤';
+    p.style.left = localX + 'px';
+    p.style.top = localY + 'px';
+    p.style.setProperty('--dx', (Math.random()*80-40) + 'px');
+    p.style.animationDelay = (i*40) + 'ms';
+    container.appendChild(p);
+    p.addEventListener('animationend', ()=>p.remove());
+  }
+  tg?.HapticFeedback?.impactOccurred?.('light');
+}
+
+function renderFeedUpTo(n){
+  feedEl.innerHTML = '';
+  for (let i=0; i<n; i++){
+    feedEl.appendChild(buildCard(VIDEO_SOURCES[i], i));
+  }
+  wireIntersection();
+  renderDots();
+  if (n <= FREE_VIDEOS_FIRST) showSwipeHint();
+}
+
+function showSwipeHint(){
+  const hintEl = document.getElementById('swipeHint');
+  hintEl.classList.add('show');
+  feedEl.addEventListener('scroll', ()=>hintEl.classList.remove('show'), { once:true });
+}
+
+function wireIntersection(){
+  const videos = feedEl.querySelectorAll('video');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      const v = entry.target;
+      const cardEl = v.closest('.card');
+      if (entry.isIntersecting && entry.intersectionRatio > 0.6){
+        v.play().catch(()=>{});
+        cardEl.classList.add('in-view');
+        const idx = Number(cardEl.dataset.index);
+        document.getElementById('likeCount').textContent = cardEl.dataset.likes || '';
+        maybeShowGate(idx);
+      } else {
+        v.pause();
+      }
+    });
+  }, { threshold:[0,0.6,1] });
+  videos.forEach(v=>io.observe(v));
+}
+
+async function maybeShowGate(index){
+  // Getting close to the end of what we've fetched — quietly top up the feed.
+  if (index >= VIDEO_SOURCES.length - 3 && !videosExhausted){
+    await loadVideos({ more:true });
+    renderDots();
+  }
+  // Trigger the ad gate when the user reaches the last unlocked video.
+  if (index === unlockedCount - 1 && unlockedCount < VIDEO_SOURCES.length){
+    const clear = await runAdBlockCheck();
+    if (!clear) return;
+    openGate();
+  }
+}
+
+function renderGateButton(){
+  const remaining = ADS_REQUIRED - adsWatchedThisGate;
+  watchAdBtn.textContent = STRINGS[lang].watchAd(Math.min(adsWatchedThisGate+1, ADS_REQUIRED));
+  watchAdBtn.disabled = false;
+}
+
+function renderAdTrack(){
+  adTrackEl.innerHTML = '';
+  for (let i=0; i<ADS_REQUIRED; i++){
+    const pip = document.createElement('div');
+    pip.className = 'pip';
+    if (i < adsWatchedThisGate) pip.classList.add('done');
+    else if (i === adsWatchedThisGate) pip.classList.add('active');
+    pip.textContent = i < adsWatchedThisGate ? '✓' : (i+1);
+    adTrackEl.appendChild(pip);
+  }
+}
+
+function openGate(){
+  adsWatchedThisGate = 0;
+  currentAdIndex = 0;
+  ringFillEl.style.transition = 'none';
+  ringFillEl.style.strokeDashoffset = '163';
+  document.getElementById('ringIcon').textContent = '🎬';
+  renderAdTrack();
+  renderGateButton();
+  gateEl.classList.add('show');
+}
+
+function closeGate(){
+  gateEl.classList.remove('show');
+}
+
+watchAdBtn.addEventListener('click', async ()=>{
+  const network = AD_NETWORKS[currentAdIndex % AD_NETWORKS.length];
+  networkTagEl.textContent = (lang==='am' ? 'በ ' : 'via ') + network.label;
+  watchAdBtn.disabled = true;
+  watchAdBtn.textContent = STRINGS[lang].watching;
+  startRing(network.avgDurationMs || 1800);
+  try{
+    await network.show();
+    finishRing();
+    logAdRevenue(network);
+    adsWatchedThisGate++;
+    currentAdIndex++;
+    renderAdTrack();
+    if (adsWatchedThisGate >= ADS_REQUIRED){
+      unlockedCount = Math.min(unlockedCount + 1, VIDEO_SOURCES.length);
+      closeGate();
+      celebrateUnlock();
+      renderFeedUpTo(unlockedCount);
+      // scroll to newly unlocked video
+      const target = feedEl.children[unlockedCount-1];
+      target?.scrollIntoView({ behavior:'smooth' });
+    } else {
+      renderGateButton();
+    }
+  } catch(e){
+    finishRing();
+    watchAdBtn.disabled = false;
+    renderGateButton();
+  }
+});
+
+// Countdown ring around the ad icon — approximate, since real ad length
+// varies; it's a "roughly this long" cue, not a precise timer.
+const ringWrapEl = document.getElementById('ringWrap');
+const ringFillEl = document.getElementById('ringFill');
+function startRing(durationMs){
+  ringWrapEl.classList.add('playing');
+  ringFillEl.style.transition = 'none';
+  ringFillEl.style.strokeDashoffset = '163';
+  void ringFillEl.getBoundingClientRect(); // force reflow before re-enabling transition
+  requestAnimationFrame(()=>{
+    ringFillEl.style.transition = `stroke-dashoffset ${durationMs}ms linear`;
+    ringFillEl.style.strokeDashoffset = '0';
+  });
+}
+function finishRing(){
+  ringWrapEl.classList.remove('playing');
+  document.getElementById('ringIcon').textContent = '✅';
+  setTimeout(()=>{ document.getElementById('ringIcon').textContent = '🎬'; }, 500);
+}
+
+document.getElementById('likeBtn').addEventListener('click', function(){
+  this.style.color = this.style.color === 'rgb(245, 93, 93)' ? '' : '#F55D5D';
+  tg?.HapticFeedback?.impactOccurred?.('light');
+});
+
+/* ================= Reward moment: confetti + toast + streak =================
+   Fires once when a gate is fully cleared — a small deliberate "win" beat
+   rather than decoration on every tap, so it stays a reward instead of noise. */
+const confettiCanvas = document.getElementById('confettiCanvas');
+const ctx = confettiCanvas.getContext('2d');
+function resizeConfetti(){
+  confettiCanvas.width = document.getElementById('app').clientWidth;
+  confettiCanvas.height = document.getElementById('app').clientHeight;
+}
+window.addEventListener('resize', resizeConfetti);
+resizeConfetti();
+
+function triggerConfetti(){
+  resizeConfetti();
+  const colors = ['#F5A623', '#33D6A6', '#FF5D5D', '#F5F3EE'];
+  const pieces = Array.from({ length: 42 }, () => ({
+    x: confettiCanvas.width / 2,
+    y: confettiCanvas.height * 0.32,
+    vx: (Math.random() - 0.5) * 9,
+    vy: Math.random() * -7 - 3,
+    size: Math.random() * 5 + 3,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    rot: Math.random() * Math.PI,
+    vrot: (Math.random() - 0.5) * 0.3,
+  }));
+  const gravity = 0.28;
+  let frame = 0;
+  function tick(){
+    frame++;
+    ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    pieces.forEach(p=>{
+      p.vy += gravity; p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+      ctx.restore();
+    });
+    if (frame < 70) requestAnimationFrame(tick);
+    else ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  }
+  tick();
+}
+
+function showRewardToast(){
+  const toast = document.getElementById('rewardToast');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), 1600);
+}
+
+function bumpStreak(){
+  const key = 'zena_streak';
+  const count = (parseInt(localStorage.getItem(key)) || 0) + 1;
+  localStorage.setItem(key, count);
+  const pill = document.getElementById('streakPill');
+  document.getElementById('streakCount').textContent = count;
+  pill.classList.add('show');
+  pill.classList.remove('bump'); void pill.offsetWidth; // restart animation
+  pill.classList.add('bump');
+  if (count >= 2) tg?.HapticFeedback?.notificationOccurred?.('success');
+}
+
+function celebrateUnlock(){
+  triggerConfetti();
+  showRewardToast();
+  bumpStreak();
+}
+
+// Restore streak pill on load if the viewer already has one from this device.
+(function initStreakPill(){
+  const count = parseInt(localStorage.getItem('zena_streak')) || 0;
+  if (count > 0){
+    document.getElementById('streakCount').textContent = count;
+    document.getElementById('streakPill').classList.add('show');
+  }
+})();
+
+/* ================= Init ================= */
+applyTheme();
+applyI18n();
+(async function init(){
+  loadingStateEl.classList.add('show');
+  await loadVideos();
+  loadingStateEl.classList.remove('show');
+  if (VIDEO_SOURCES.length === 0){
+    emptyStateEl.classList.add('show');
+    return;
+  }
+  unlockedCount = Math.min(FREE_VIDEOS_FIRST, VIDEO_SOURCES.length);
+  renderFeedUpTo(unlockedCount);
+  runAdBlockCheck();
+})();
+</script>
 </body>
 </html>
