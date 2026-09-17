@@ -3,7 +3,7 @@ window.APP_CONFIG = {
   API_BASE: "https://YOUR-WORKER.workers.dev",
 
   // Put the Rewarded block ID from your AdsGram publisher account here.
-  ADS_GRAM_BLOCK_ID: "YOUR_ADSGRAM_BLOCK_ID",
+  ADS_GRAM_BLOCK_ID: "799484441",
 
   // Optional second ad destination/provider. Leave empty until you have
   // a provider and approved integration code.
