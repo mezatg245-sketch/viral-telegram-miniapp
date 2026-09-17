@@ -1,4 +1,4 @@
-name = "viral-loop-api"
+name = "viral-telegram-miniapp"
 main = "worker.js"
 compatibility_date = "2026-09-01"
 
