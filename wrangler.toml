@@ -1,0 +1,12 @@
+name = "viral-loop-api"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+CHANNEL_ID = "-1000000000000"
+PUBLIC_API_BASE = "https://YOUR-WORKER.workers.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "viral-loop-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"

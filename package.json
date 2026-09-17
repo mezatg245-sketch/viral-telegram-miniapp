@@ -1,0 +1,12 @@
+{
+  "name": "viral-loop-telegram-miniapp",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "pages": "wrangler pages deploy public --project-name viral-loop"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
