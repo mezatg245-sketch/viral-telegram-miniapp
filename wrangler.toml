@@ -3,6 +3,10 @@ name = 'viral-telegram-miniapp'
 #name = "viral-loop-db"
 main = "worker.js"
 compatibility_date = "2026-09-01"
+# ...
+[observability]
+enabled = false
+# ...
 
 [vars]
 CHANNEL_ID = "-1000000000000"
