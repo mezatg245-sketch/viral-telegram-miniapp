@@ -1,4 +1,4 @@
-name = "viral-telegram-miniapp"
+name = "viral-loop-db"
 main = "worker.js"
 compatibility_date = "2026-09-01"
 
@@ -9,4 +9,4 @@ PUBLIC_API_BASE = "https://YOUR-WORKER.workers.dev"
 [[d1_databases]]
 binding = "DB"
 database_name = "viral-loop-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "b5a6d314-e5bd-4a21-9696-39b7599ede7f"
