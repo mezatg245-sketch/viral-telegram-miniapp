@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Zena — Revenue Dashboard</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;700&family=Noto+Sans+Ethiopic:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#0B0E14; --surface:#151A24; --surface-raised:#1D2330;
+    --text-primary:#F5F3EE; --text-muted:#8A93A3;
+    --accent:#F5A623; --accent-ink:#231A05; --mint:#33D6A6; --danger:#FF5D5D;
+    --hairline:rgba(245,243,238,0.09);
+    --font-ui:'Sora','Noto Sans Ethiopic',sans-serif;
+    --font-body:'Manrope','Noto Sans Ethiopic',sans-serif;
+  }
+  html[data-theme="light"]{
+    --bg-void:#F7F5F0; --surface:#FFFFFF; --surface-raised:#FFFFFF;
+    --text-primary:#171A21; --text-muted:#6B7280; --accent:#E08A00; --accent-ink:#FFF6E6;
+    --hairline:rgba(23,26,33,0.10);
+  }
+  *{box-sizing:border-box;}
+  html[lang="am"] body{ font-family:'Noto Sans Ethiopic','Manrope',sans-serif; }
+  body{ margin:0; background:var(--bg-void); color:var(--text-primary); font-family:var(--font-body); }
+  .app{ max-width:560px; margin:0 auto; min-height:100dvh; padding-bottom:32px; }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:calc(env(safe-area-inset-top,0px) + 16px) 18px 10px;
+  }
+  header h1{ font-family:var(--font-ui); font-size:19px; margin:0; }
+  .icon-row{ display:flex; gap:8px; }
+  .icon-btn{
+    width:36px; height:36px; border-radius:50%; border:1px solid var(--hairline);
+    background:var(--surface); color:var(--text-primary); font-size:15px; cursor:pointer;
+  }
+
+  .hero{
+    margin:6px 18px 18px; padding:22px; border-radius:22px;
+    background:linear-gradient(150deg, var(--surface-raised), var(--surface));
+    border:1px solid var(--hairline);
+  }
+  .hero .label{ font-family:var(--font-ui); font-size:12.5px; color:var(--text-muted); margin-bottom:6px; }
+  .hero .num{ font-family:var(--font-ui); font-size:38px; font-weight:800; letter-spacing:-0.5px; }
+  .hero .sub{ font-size:12.5px; color:var(--mint); margin-top:6px; }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 18px; }
+  .card{
+    background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:14px;
+  }
+  .card .label{ font-size:11.5px; color:var(--text-muted); margin-bottom:4px; }
+  .card .val{ font-family:var(--font-ui); font-size:20px; font-weight:700; }
+
+  section{ padding:22px 18px 0; }
+  section h2{ font-family:var(--font-ui); font-size:14px; margin:0 0 12px; color:var(--text-muted); font-weight:700; }
+
+  .chart-card{ background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:16px; }
+  .bar-row{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .bar-row:last-child{ margin-bottom:0; }
+  .bar-label{ width:78px; font-size:12px; color:var(--text-muted); flex-shrink:0; }
+  .bar-track{ flex:1; height:10px; background:var(--hairline); border-radius:6px; overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--accent); border-radius:6px; transition:width .4s ease; }
+  .bar-val{ width:64px; text-align:right; font-size:12px; font-family:var(--font-ui); font-weight:700; flex-shrink:0; }
+
+  table{ width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--hairline); border-radius:16px; overflow:hidden; }
+  th,td{ padding:11px 12px; text-align:left; font-size:12.5px; border-bottom:1px solid var(--hairline); }
+  th{ color:var(--text-muted); font-family:var(--font-ui); font-weight:700; font-size:11px; }
+  tr:last-child td{ border-bottom:none; }
+  input.ecpm-input{
+    width:64px; padding:5px 7px; border-radius:8px; border:1px solid var(--hairline);
+    background:var(--bg-void); color:var(--text-primary); font-family:var(--font-body); font-size:12.5px;
+  }
+
+  .empty{ text-align:center; color:var(--text-muted); font-size:13px; padding:28px 20px; }
+  .btn-ghost-sm{
+    display:block; margin:16px auto 0; padding:9px 16px; border-radius:10px; border:1px solid var(--hairline);
+    background:none; color:var(--text-muted); font-family:var(--font-ui); font-size:12px; cursor:pointer;
+  }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1 data-i18n="title">Revenue dashboard</h1>
+    <div class="icon-row">
+      <button class="icon-btn" id="langToggle">EN</button>
+      <button class="icon-btn" id="themeToggle">🌙</button>
+      <a class="icon-btn" href="/admin/logout" title="Log out" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">⎋</a>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="label" data-i18n="totalLabel">Estimated total revenue</div>
+    <div class="num" id="totalRevenue">$0.00</div>
+    <div class="sub" id="totalViews">0 ad views logged</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="label" data-i18n="todayLabel">Today</div>
+      <div class="val" id="todayRevenue">$0.00</div>
+    </div>
+    <div class="card">
+      <div class="label" data-i18n="avgLabel">Avg. per user session</div>
+      <div class="val" id="avgRevenue">$0.00</div>
+    </div>
+  </div>
+
+  <section>
+    <h2 data-i18n="byNetwork">Revenue by ad network</h2>
+    <div class="chart-card" id="chartCard"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="ecpmTitle">eCPM settings (USD per 1,000 views)</h2>
+    <table id="ecpmTable"><thead><tr>
+      <th data-i18n="network">Network</th><th data-i18n="ecpmCol">eCPM</th><th data-i18n="viewsCol">Views</th>
+    </tr></thead><tbody id="ecpmBody"></tbody></table>
+  </section>
+
+  <section>
+    <h2 data-i18n="logTitle">Recent ad views</h2>
+    <table id="logTable"><thead><tr>
+      <th data-i18n="timeCol">Time</th><th data-i18n="network">Network</th><th data-i18n="revenueCol">Revenue</th>
+    </tr></thead><tbody id="logBody"></tbody></table>
+    <button class="btn-ghost-sm" id="clearBtn" data-i18n="clearLog">Clear log</button>
+  </section>
+  <a href="/" class="btn-ghost-sm" style="display:block; text-align:center; text-decoration:none; margin-top:18px;" data-i18n="backToApp">← Back to app</a>
+</div>
+
+<script>
+const STRINGS = {
+  en:{
+    title:"Revenue dashboard", totalLabel:"Estimated total revenue", todayLabel:"Today",
+    avgLabel:"Avg. per user session", byNetwork:"Revenue by ad network",
+    ecpmTitle:"eCPM settings (USD per 1,000 views)", network:"Network", ecpmCol:"eCPM",
+    viewsCol:"Views", logTitle:"Recent ad views", timeCol:"Time", revenueCol:"Revenue",
+    clearLog:"Clear log", backToApp:"← Back to app", emptyLog:"No ad views logged yet on this device.",
+    viewsSuffix:(n)=>`${n} ad views logged`,
+  },
+  am:{
+    title:"የገቢ ዳሽቦርድ", totalLabel:"የተገመተ ጠቅላላ ገቢ", todayLabel:"ዛሬ",
+    avgLabel:"በአማካይ በተጠቃሚ ክፍለ ጊዜ", byNetwork:"በማስታወቂያ አውታር ገቢ",
+    ecpmTitle:"የeCPM ቅንብሮች (በዶላር በ1,000 እይታ)", network:"አውታር", ecpmCol:"eCPM",
+    viewsCol:"እይታዎች", logTitle:"የቅርብ ጊዜ ማስታወቂያ እይታዎች", timeCol:"ሰዓት", revenueCol:"ገቢ",
+    clearLog:"መዝገብ አጽዳ", backToApp:"← ወደ መተግበሪያው ተመለስ", emptyLog:"በዚህ መሳሪያ ላይ እስካሁን የተመዘገበ ማስታወቂያ እይታ የለም።",
+    viewsSuffix:(n)=>`${n} የማስታወቂያ እይታዎች ተመዝግበዋል`,
+  }
+};
+let lang = localStorage.getItem('zena_lang') || 'en';
+let theme = localStorage.getItem('zena_theme') || 'dark';
+
+function applyI18n(){
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const v = STRINGS[lang][el.getAttribute('data-i18n')];
+    if (typeof v === 'string') el.textContent = v;
+  });
+  document.getElementById('langToggle').textContent = lang === 'en' ? 'EN' : 'አማ';
+}
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeToggle').textContent = theme === 'dark' ? '🌙' : '☀️';
+}
+document.getElementById('langToggle').addEventListener('click', ()=>{
+  lang = lang === 'en' ? 'am' : 'en';
+  localStorage.setItem('zena_lang', lang);
+  applyI18n(); render();
+});
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  theme = theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('zena_theme', theme);
+  applyTheme();
+});
+
+const tg = window.Telegram?.WebApp;
+if (tg){ tg.ready(); tg.expand(); }
+
+/* Networks + editable eCPM, persisted separately so you can tune assumptions
+   without touching the app's ad-serving code. */
+const DEFAULT_NETWORKS = {
+  adsgram: { label:'Adsgram', ecpm:4.20 },
+  monetag: { label:'Monetag', ecpm:3.10 },
+};
+function getNetworkConfig(){
+  return JSON.parse(localStorage.getItem('zena_network_config') || 'null') || DEFAULT_NETWORKS;
+}
+function saveNetworkConfig(cfg){
+  localStorage.setItem('zena_network_config', JSON.stringify(cfg));
+}
+
+function getLog(){
+  return JSON.parse(localStorage.getItem('zena_revenue_log') || '[]');
+}
+
+function fmt(n){ return '$' + n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+function render(){
+  const log = getLog();
+  const cfg = getNetworkConfig();
+
+  // Recompute each entry's revenue using the *current* eCPM setting for its network,
+  // so editing eCPM instantly re-prices historical views.
+  const priced = log.map(e => ({ ...e, revenue: (cfg[e.network]?.ecpm ?? e.ecpm) / 1000 }));
+
+  const total = priced.reduce((s,e)=>s+e.revenue, 0);
+  document.getElementById('totalRevenue').textContent = fmt(total);
+  document.getElementById('totalViews').textContent = STRINGS[lang].viewsSuffix(priced.length);
+
+  const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+  const todayTotal = priced.filter(e=>e.ts >= startOfDay.getTime()).reduce((s,e)=>s+e.revenue,0);
+  document.getElementById('todayRevenue').textContent = fmt(todayTotal);
+
+  // crude "session" = every 2 ad views (matches the app's unlock gate)
+  const sessions = Math.max(1, Math.ceil(priced.length / 2));
+  document.getElementById('avgRevenue').textContent = fmt(total / sessions);
+
+  // by-network chart
+  const byNetwork = {};
+  Object.keys(cfg).forEach(id => byNetwork[id] = { views:0, revenue:0 });
+  priced.forEach(e=>{
+    if (!byNetwork[e.network]) byNetwork[e.network] = { views:0, revenue:0 };
+    byNetwork[e.network].views++;
+    byNetwork[e.network].revenue += e.revenue;
+  });
+  const maxRev = Math.max(0.01, ...Object.values(byNetwork).map(v=>v.revenue));
+  const chartCard = document.getElementById('chartCard');
+  chartCard.innerHTML = '';
+  Object.entries(byNetwork).forEach(([id, v])=>{
+    const label = cfg[id]?.label || id;
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-label">${label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(v.revenue/maxRev*100).toFixed(1)}%"></div></div>
+      <div class="bar-val">${fmt(v.revenue)}</div>`;
+    chartCard.appendChild(row);
+  });
+
+  // eCPM settings table
+  const ecpmBody = document.getElementById('ecpmBody');
+  ecpmBody.innerHTML = '';
+  Object.entries(cfg).forEach(([id, conf])=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${conf.label}</td>
+      <td><input class="ecpm-input" type="number" step="0.01" min="0" value="${conf.ecpm}" data-network="${id}"></td>
+      <td>${byNetwork[id]?.views ?? 0}</td>`;
+    ecpmBody.appendChild(tr);
+  });
+  ecpmBody.querySelectorAll('.ecpm-input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const c = getNetworkConfig();
+      c[inp.dataset.network].ecpm = parseFloat(inp.value) || 0;
+      saveNetworkConfig(c);
+      render();
+    });
+  });
+
+  // recent log table
+  const logBody = document.getElementById('logBody');
+  logBody.innerHTML = '';
+  if (priced.length === 0){
+    logBody.innerHTML = `<tr><td colspan="3" class="empty">${STRINGS[lang].emptyLog}</td></tr>`;
+  } else {
+    priced.slice(-25).reverse().forEach(e=>{
+      const tr = document.createElement('tr');
+      const d = new Date(e.ts);
+      tr.innerHTML = `<td>${d.toLocaleString()}</td><td>${cfg[e.network]?.label || e.network}</td><td>${fmt(e.revenue)}</td>`;
+      logBody.appendChild(tr);
+    });
+  }
+}
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  localStorage.removeItem('zena_revenue_log');
+  render();
+});
+
+applyTheme();
+applyI18n();
+render();
+</script>
+</body>
+</html>

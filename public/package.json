@@ -1,0 +1,19 @@
+{
+  "name": "zena-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend for the Zena Telegram Mini App — mirrors a private Telegram group/channel and serves it through a hidden API.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-fetch": "^2.7.0"
+  }
+}

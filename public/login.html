@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Zena — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#0B0E14; --surface-raised:#1D2330; --text-primary:#F5F3EE;
+    --text-muted:#8A93A3; --accent:#F5A623; --accent-ink:#231A05; --danger:#FF5D5D;
+    --hairline:rgba(245,243,238,0.09);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100dvh; display:flex; align-items:center; justify-content:center;
+    background:var(--bg-void); color:var(--text-primary); font-family:'Manrope',sans-serif; padding:24px;
+  }
+  .sheet{
+    width:100%; max-width:340px; background:var(--surface-raised); border:1px solid var(--hairline);
+    border-radius:22px; padding:28px 24px;
+  }
+  .sheet .glyph{ font-size:30px; display:block; margin-bottom:10px; }
+  h1{ font-family:'Sora',sans-serif; font-size:18px; margin:0 0 6px; }
+  p{ color:var(--text-muted); font-size:13px; margin:0 0 20px; line-height:1.5; }
+  input{
+    width:100%; padding:13px 14px; border-radius:12px; border:1px solid var(--hairline);
+    background:var(--bg-void); color:var(--text-primary); font-size:15px; margin-bottom:14px;
+  }
+  button{
+    width:100%; padding:13px; border:none; border-radius:12px; font-family:'Sora',sans-serif;
+    font-weight:700; font-size:15px; background:var(--accent); color:var(--accent-ink); cursor:pointer;
+  }
+  .error{ color:var(--danger); font-size:12.5px; margin:-6px 0 14px; display:none; }
+  .error.show{ display:block; }
+</style>
+</head>
+<body>
+  <form class="sheet" id="loginForm">
+    <span class="glyph">🔒</span>
+    <h1>Zena Admin</h1>
+    <p>This dashboard is not linked from the app. Enter the admin password to continue.</p>
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password" autofocus>
+    <div class="error" id="err">Incorrect password.</div>
+    <button type="submit">Enter</button>
+  </form>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const err = document.getElementById('err');
+  err.classList.remove('show');
+  const password = document.getElementById('password').value;
+  const res = await fetch('/admin/login', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ password })
+  });
+  if (res.ok) window.location.href = '/admin/dashboard';
+  else err.classList.add('show');
+});
+</script>
+</body>
+</html>
