@@ -59,6 +59,7 @@
   /* Feed */
   .feed{height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}.feed::-webkit-scrollbar{display:none}.feed.hidden{display:none}
   .card{height:100dvh;scroll-snap-align:start;position:relative;background:#000;display:flex;align-items:flex-end;opacity:0;transform:scale(.98);transition:opacity .35s,transform .45s}.card.in-view{opacity:1;transform:scale(1)}
+  .ad-card{height:100dvh;scroll-snap-align:start;position:relative;background:radial-gradient(circle at 50% 35%,rgba(245,166,35,.14),transparent 35%),var(--bg);display:grid;place-items:center;padding:28px}.ad-card-inner{width:min(100%,360px);text-align:center;border:1px solid var(--line);background:rgba(20,25,35,.78);backdrop-filter:blur(14px);border-radius:24px;padding:28px 22px;box-shadow:0 20px 60px rgba(0,0,0,.28)}.ad-card-icon{width:58px;height:58px;margin:0 auto 14px;border-radius:18px;display:grid;place-items:center;background:rgba(245,166,35,.12);font-size:27px}.ad-card-label{font:800 11px var(--font);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}.ad-card-title{font:800 20px var(--font);margin-bottom:8px}.ad-card-copy{color:var(--muted);font-size:13px;line-height:1.5}.ad-card-status{margin-top:14px;font-size:11px;color:var(--muted)}.ad-card.in-view .ad-card-icon{animation:adPulse 1.5s ease-in-out infinite}@keyframes adPulse{50%{transform:scale(1.06);opacity:.8}}
   .card video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#10141d}.card:after{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(transparent,rgba(4,5,8,.88));pointer-events:none}
   .meta{position:relative;z-index:2;width:100%;padding:0 16px calc(env(safe-area-inset-bottom) + 28px)}.creator{font-family:var(--font);font-weight:700;margin-bottom:6px}.creator .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mint);margin-right:7px}.caption{color:#eee;font-size:14px;line-height:1.45;max-width:88%}
   .stat-rail{position:absolute;right:10px;bottom:calc(env(safe-area-inset-bottom) + 32px);z-index:25;display:flex;flex-direction:column;gap:15px;align-items:center}.stat{display:flex;flex-direction:column;align-items:center;gap:4px;color:#fff;font:11px var(--font)}.stat button{width:44px;height:44px;border:0;border-radius:50%;background:rgba(20,25,35,.58);color:#fff;font-size:19px;backdrop-filter:blur(7px)}
@@ -93,12 +94,12 @@
         <div class="hero-sub">Fresh Ethiopian clips, Habesha vibes and exciting new moments — updated from your published feed.</div>
       </div>
     </div>
-    <p class="welcome-sub" data-i18n="welcomeSub">Pick a video to start. Watch 2 rewarded ads to unlock the feed, then keep scrolling through all published clips.</p>
+    <p class="welcome-sub" data-i18n="welcomeSub">Pick a video to start, then keep scrolling through all published clips. You may occasionally see a sponsored break between clips.</p>
     <div class="selection-card">
       <div class="selection-head"><strong data-i18n="published">Published videos</strong><span id="videoCount">0 videos</span></div>
       <div class="content-grid" id="contentGrid"><div class="empty-picker" data-i18n="loading">Loading published videos…</div></div>
       <button class="start-btn" id="startBtn" disabled data-i18n="startWatching">Select a video</button>
-      <div class="ad-note"><span>🔒</span><span data-i18n="adNote"><b>2 rewarded ads</b> are required before the first video. After that, one rewarded ad is required every 7 minutes of viewing.</span></div>
+      <div class="ad-note"><span>📢</span><span data-i18n="adNote"><b>Sponsored breaks</b> may appear between clips. They never lock or remove access to your videos.</span></div>
     </div>
   </section>
 
@@ -111,23 +112,12 @@
   <div class="state-screen" id="loadingState"><div class="state-inner"><div class="spinner"></div><h2 data-i18n="loadingTitle">Loading</h2><p data-i18n="loadingBody">Getting the latest published clips…</p></div></div>
   <div class="state-screen" id="emptyState"><div class="state-inner"><div style="font-size:36px">📭</div><h2 data-i18n="emptyTitle">No clips yet</h2><p data-i18n="emptyBody">Publish a video to the source Telegram channel and it will appear here.</p></div></div>
 
-  <div class="gate" id="gate">
-    <div class="sheet">
-      <div class="ring" id="ring"><svg width="64" height="64" viewBox="0 0 60 60"><circle class="ring-track" cx="30" cy="30" r="26"></circle><circle class="ring-fill" id="ringFill" cx="30" cy="30" r="26"></circle></svg><div class="ring-icon" id="ringIcon">🎬</div></div>
-      <h2 id="gateTitle">Watch an ad to continue</h2>
-      <p id="gateBody">Finish the rewarded ad to unlock the next part of the feed.</p>
-      <div class="ad-track" id="adTrack"></div>
-      <button class="btn-primary" id="watchAdBtn">Watch ad 1 of 2</button>
-      <div class="network-tag" id="networkTag">Adsgram Rewarded</div>
-      <div class="ad-status" id="adStatus"></div>
-    </div>
-  </div>
 </div>
 
 <script>
 const STRINGS={
-  en:{welcomeSub:'Pick a video to start. Watch 2 rewarded ads to unlock the feed, then keep scrolling through all published clips.',published:'Published videos',loading:'Loading published videos…',startWatching:'Select a video',startReady:'Watch 2 ads to start',adNote:'2 rewarded ads are required before the first video. After that, one rewarded ad is required every 7 minutes of viewing.',keepSwiping:'Keep swiping',share:'Share',unlocked:'Unlocked! Keep watching',loadingTitle:'Loading',loadingBody:'Getting the latest published clips…',emptyTitle:'No clips yet',emptyBody:'Publish a video to the source Telegram channel and it will appear here.',gateInitialTitle:'Watch 2 ads to unlock',gateInitialBody:'Finish both rewarded ads to unlock the feed.',gateTimedTitle:'7 minutes reached',gateTimedBody:'Watch one rewarded ad to continue watching.',watchAd:n=>`Watch ad ${n} of 2`,watchTimed:'Watch rewarded ad',watching:'Playing ad…',adUnavailable:'Adsgram is not ready yet. Add your approved Reward Block ID, or use a Test platform/block while testing.'},
-  am:{welcomeSub:'ለመጀመር ቪዲዮ ይምረጡ። ፊድውን ለመክፈት 2 የሽልማት ማስታወቂያዎችን ይመልከቱ፣ ከዚያ ሁሉንም የታተሙ ክሊፖች ይቀጥሉ።',published:'የታተሙ ቪዲዮዎች',loading:'የታተሙ ቪዲዮዎችን በመጫን ላይ…',startWatching:'ቪዲዮ ይምረጡ',startReady:'ለመጀመር 2 ማስታወቂያዎችን ይመልከቱ',adNote:'ከመጀመሪያው ቪዲዮ በፊት 2 የሽልማት ማስታወቂያዎች ያስፈልጋሉ። ከዚያ በኋላ በየ7 ደቂቃው አንድ ማስታወቂያ ያስፈልጋል።',keepSwiping:'መንሸራተትዎን ይቀጥሉ',share:'አጋራ',unlocked:'ተከፍቷል! መመልከትዎን ይቀጥሉ',loadingTitle:'በመጫን ላይ',loadingBody:'የቅርብ ጊዜ የታተሙ ክሊፖችን በማግኘት ላይ…',emptyTitle:'እስካሁን ክሊፖች የሉም',emptyBody:'ቪዲዮን ወደ ምንጭ የTelegram ቻናል ያትሙ እና እዚህ ይታያል።',gateInitialTitle:'ለመክፈት 2 ማስታወቂያዎችን ይመልከቱ',gateInitialBody:'ፊድውን ለመክፈት ሁለቱንም የሽልማት ማስታወቂያዎች ይጨርሱ።',gateTimedTitle:'7 ደቂቃ ደርሷል',gateTimedBody:'መመልከትዎን ለመቀጠል አንድ የሽልማት ማስታወቂያ ይመልከቱ።',watchAd:n=>`ማስታወቂያ ${n} ከ2`,watchTimed:'የሽልማት ማስታወቂያ ይመልከቱ',watching:'ማስታወቂያ በመጫወት ላይ…',adUnavailable:'Adsgram አሁን ዝግጁ አይደለም። የተፈቀደ Reward Block ID ያስገቡ ወይም Test platform/block ለሙከራ ይጠቀሙ።'}
+  en:{welcomeSub:'Pick a video to start, then keep scrolling through all published clips. You may occasionally see a sponsored break between clips.',published:'Published videos',loading:'Loading published videos…',startWatching:'Select a video',startReady:'Start watching',adNote:'Sponsored breaks may appear between clips. They never lock or remove access to your videos.',keepSwiping:'Keep swiping',share:'Share',unlocked:'Enjoy the clips',loadingTitle:'Loading',loadingBody:'Getting the latest published clips…',emptyTitle:'No clips yet',emptyBody:'Publish a video to the source Telegram channel and it will appear here.',sponsored:'Sponsored',sponsoredTitle:'Sponsored break',sponsoredBody:'A short advertisement may appear here. You can close it and return to the same place in your feed.',adSkipped:'Ad unavailable — continuing to your clips.',adReady:'Loading advertisement…'},
+  am:{welcomeSub:'ለመጀመር ቪዲዮ ይምረጡ፣ ከዚያ በሁሉም የታተሙ ክሊፖች መካከል መንሸራተትዎን ይቀጥሉ። አልፎ አልፎ በክሊፖች መካከል የስፖንሰር ማስታወቂያ ሊታይ ይችላል።',published:'የታተሙ ቪዲዮዎች',loading:'የታተሙ ቪዲዮዎችን በመጫን ላይ…',startWatching:'ቪዲዮ ይምረጡ',startReady:'መመልከት ይጀምሩ',adNote:'የስፖንሰር ማስታወቂያዎች በክሊፖች መካከል ሊታዩ ይችላሉ። ቪዲዮዎችዎን አይቆልፉም ወይም መዳረሻን አያስወግዱም።',keepSwiping:'መንሸራተትዎን ይቀጥሉ',share:'አጋራ',unlocked:'ቪዲዮዎቹን ይደሰቱ',loadingTitle:'በመጫን ላይ',loadingBody:'የቅርብ ጊዜ የታተሙ ክሊፖችን በማግኘት ላይ…',emptyTitle:'እስካሁን ክሊፖች የሉም',emptyBody:'ቪዲዮን ወደ ምንጭ የTelegram ቻናል ያትሙ እና እዚህ ይታያል።',sponsored:'ስፖንሰር',sponsoredTitle:'የስፖንሰር እረፍት',sponsoredBody:'አጭር ማስታወቂያ እዚህ ሊታይ ይችላል። መዝጋት እና በተመሳሳይ ቦታ ወደ ፊድዎ መመለስ ይችላሉ።',adSkipped:'ማስታወቂያ አልተገኘም — ወደ ቪዲዮዎቹ እየቀጠልን ነው።',adReady:'ማስታወቂያ በመጫን ላይ…'}
 };
 
 const TITLE_BANK=[
@@ -162,26 +152,44 @@ document.getElementById('langToggle').onclick=()=>{lang=lang==='en'?'am':'en';lo
 document.getElementById('themeToggle').onclick=()=>{theme=theme==='dark'?'light':'dark';localStorage.setItem('zena_theme',theme);applyTheme()};
 
 /* AdsGram
-   IMPORTANT: 173883718 is the Telegram Bot ID, not an AdsGram Block ID.
-   Put the Reward block ID from the AdsGram publisher panel here after the
-   Reward ad unit is approved, or use the Block ID from an AdsGram Test platform. */
-const ADSGRAM_BLOCK_ID='YOUR_REWARDED_BLOCK_ID';
-let adController=null;
-function initAdsgram(){
-  if(!window.Adsgram||!ADSGRAM_BLOCK_ID||ADSGRAM_BLOCK_ID==='YOUR_REWARDED_BLOCK_ID')return false;
-  try{adController=window.Adsgram.init({blockId:ADSGRAM_BLOCK_ID});return !!adController}catch(e){console.error('Adsgram init failed',e);return false}
+   Rewarded ads are intentionally NOT used to unlock or gate videos.
+   This app uses an Interstitial block only at natural breaks between clips.
+
+   IMPORTANT:
+   - Create an AdsGram Interstitial block in the publisher panel.
+   - The Interstitial block ID must use the `int-xxx` format.
+   - Replace YOUR_INTERSTITIAL_BLOCK_ID after the block is approved/testable.
+*/
+const ADSGRAM_INTERSTITIAL_BLOCK_ID='YOUR_INTERSTITIAL_BLOCK_ID';
+let interstitialController=null;
+let shownAdBreaks=new Set();
+
+function initAdsgramInterstitial(){
+  if(!window.Adsgram||!ADSGRAM_INTERSTITIAL_BLOCK_ID||ADSGRAM_INTERSTITIAL_BLOCK_ID==='YOUR_INTERSTITIAL_BLOCK_ID')return false;
+  try{
+    interstitialController=window.Adsgram.init({blockId:ADSGRAM_INTERSTITIAL_BLOCK_ID});
+    return !!interstitialController;
+  }catch(e){
+    console.error('Adsgram interstitial init failed',e);
+    return false;
+  }
 }
-async function showRewardedAd(){
-  if(!adController) initAdsgram();
-  if(!adController)throw new Error('Adsgram Reward block is not configured');
-  const result=await adController.show();
-  if(!result || result.done!==true)throw new Error('Rewarded ad was not completed');
-  return result;
+
+async function showInterstitialAd(){
+  if(!interstitialController) initAdsgramInterstitial();
+  if(!interstitialController)return false;
+  try{
+    await interstitialController.show();
+    return true;
+  }catch(e){
+    console.warn('Adsgram interstitial unavailable:',e);
+    return false;
+  }
 }
 
 const API_BASE='';
-let videos=[];let selectedIndex=0;let unlocked=false;let initialAds=0;let adShowing=false;let nextAdAt=0;let gateMode='initial';
-const feed=document.getElementById('feed'),welcome=document.getElementById('welcome'),topbar=document.getElementById('topbar'),contentGrid=document.getElementById('contentGrid'),startBtn=document.getElementById('startBtn'),gate=document.getElementById('gate'),watchAdBtn=document.getElementById('watchAdBtn'),adTrack=document.getElementById('adTrack'),adStatus=document.getElementById('adStatus'),networkTag=document.getElementById('networkTag'),ring=document.getElementById('ring'),ringFill=document.getElementById('ringFill');
+let videos=[];let selectedIndex=0;let adShowing=false;let adBreakCounter=0;
+const feed=document.getElementById('feed'),welcome=document.getElementById('welcome'),topbar=document.getElementById('topbar'),contentGrid=document.getElementById('contentGrid'),startBtn=document.getElementById('startBtn');
 const loadingState=document.getElementById('loadingState'),emptyState=document.getElementById('emptyState'),statRail=document.getElementById('statRail'),progressDots=document.getElementById('progressDots');
 
 async function loadVideos(){
@@ -255,29 +263,49 @@ function renderContentPicker(){
 }
 function renderStartButton(){startBtn.textContent=videos.length?(STRINGS[lang].startReady):STRINGS[lang].startWatching;startBtn.disabled=!videos.length}
 
-function setGate(mode){gateMode=mode;initialAds=0;adStatus.classList.remove('show');adStatus.textContent='';document.getElementById('gateTitle').textContent=mode==='initial'?STRINGS[lang].gateInitialTitle:STRINGS[lang].gateTimedTitle;document.getElementById('gateBody').textContent=mode==='initial'?STRINGS[lang].gateInitialBody:STRINGS[lang].gateTimedBody;renderAdTrack();renderGateButton();gate.classList.add('show')}
-function renderAdTrack(){adTrack.innerHTML='';const count=gateMode==='initial'?2:1;for(let i=0;i<count;i++){const p=document.createElement('div');p.className='pip '+(i<initialAds?'done':i===initialAds?'active':'');p.textContent=i<initialAds?'✓':i+1;adTrack.appendChild(p)}}
-function renderGateButton(){watchAdBtn.disabled=adShowing;watchAdBtn.textContent=gateMode==='initial'?STRINGS[lang].watchAd(Math.min(initialAds+1,2)):STRINGS[lang].watchTimed}
-function openTimedGate(){pauseCurrent();setGate('timed')}
-function closeGate(){gate.classList.remove('show');adStatus.classList.remove('show')}
-
-startBtn.onclick=()=>{setGate('initial')};
-watchAdBtn.onclick=async()=>{
-  if(adShowing)return;adShowing=true;adStatus.classList.remove('show');renderGateButton();watchAdBtn.textContent=STRINGS[lang].watching;networkTag.textContent='Adsgram Rewarded';startRing();
-  try{await showRewardedAd();finishRing();initialAds++;renderAdTrack();
-    if(gateMode==='initial'&&initialAds<2){renderGateButton();return}
-    unlocked=true;nextAdAt=Date.now()+7*60*1000;closeGate();welcome.classList.add('hidden');topbar.classList.remove('hidden');feed.classList.remove('hidden');statRail.style.display='flex';buildFeed(selectedIndex);celebrate();
-  }catch(e){finishRing();adStatus.textContent=STRINGS[lang].adUnavailable;adStatus.classList.add('show');console.error(e);renderGateButton()}finally{adShowing=false;renderGateButton()}
+startBtn.onclick=()=>{
+  if(!videos.length)return;
+  welcome.classList.add('hidden');
+  topbar.classList.remove('hidden');
+  feed.classList.remove('hidden');
+  statRail.style.display='flex';
+  buildFeed(selectedIndex);
 };
-function startRing(){ring.classList.add('playing');ringFill.style.transition='none';ringFill.style.strokeDashoffset='163';void ringFill.offsetWidth;requestAnimationFrame(()=>{ringFill.style.transition='stroke-dashoffset 2s linear';ringFill.style.strokeDashoffset='0'})}
-function finishRing(){ring.classList.remove('playing');document.getElementById('ringIcon').textContent='✅';setTimeout(()=>document.getElementById('ringIcon').textContent='🎬',500)}
 
 let sequence=[];let observer=null;let currentCardIndex=0;
-function buildSequence(start){sequence=[];if(!videos.length)return;for(let cycle=0;cycle<4;cycle++)for(let j=0;j<videos.length;j++)sequence.push((start+j)%videos.length)}
-function buildFeed(start){buildSequence(start);feed.innerHTML='';sequence.forEach((videoIndex,position)=>feed.appendChild(buildCard(videoIndex,position)));wireObserver();feed.scrollTop=0;currentCardIndex=0}
+const AD_EVERY_VIDEOS=4;
+
+function buildSequence(start){
+  sequence=[];
+  if(!videos.length)return;
+  for(let cycle=0;cycle<4;cycle++){
+    for(let j=0;j<videos.length;j++){
+      const position=sequence.length;
+      sequence.push({type:'video',videoIndex:(start+j)%videos.length});
+      if((position+1)%AD_EVERY_VIDEOS===0){
+        adBreakCounter++;
+        sequence.push({type:'ad',adId:`ad-${adBreakCounter}`});
+      }
+    }
+  }
+}
+
+function buildFeed(start){
+  buildSequence(start);
+  feed.innerHTML='';
+  sequence.forEach((item,position)=>{
+    feed.appendChild(item.type==='video'
+      ? buildCard(item.videoIndex,position)
+      : buildAdCard(item.adId,position));
+  });
+  wireObserver();
+  feed.scrollTop=0;
+  currentCardIndex=0;
+}
+
 function buildCard(videoIndex,position){
   const v=videos[videoIndex],card=document.createElement('div');
-  card.className='card';card.dataset.position=position;card.dataset.videoIndex=videoIndex;
+  card.className='card';card.dataset.position=position;card.dataset.type='video';card.dataset.videoIndex=videoIndex;
   const el=document.createElement('video');
   el.src=v.streamUrl;el.muted=true;el.loop=true;el.playsInline=true;el.preload='metadata';
   createThumbnail(v.streamUrl,data=>{if(data)el.poster=data});
@@ -289,15 +317,101 @@ function buildCard(videoIndex,position){
   safeText(cap,v.caption?`${v.displayTitle} — ${v.caption}`:v.displayTitle);
   meta.append(creator,cap);card.append(el,meta);
   card.addEventListener('pointerup',e=>doubleTap(card,e));
-  return card
+  return card;
 }
+
+function buildAdCard(adId,position){
+  const card=document.createElement('div');
+  card.className='ad-card';
+  card.dataset.position=position;
+  card.dataset.type='ad';
+  card.dataset.adId=adId;
+  card.innerHTML=`<div class="ad-card-inner"><div class="ad-card-icon">📢</div><div class="ad-card-label">${STRINGS[lang].sponsored}</div><div class="ad-card-title">${STRINGS[lang].sponsoredTitle}</div><div class="ad-card-copy">${STRINGS[lang].sponsoredBody}</div><div class="ad-card-status">${STRINGS[lang].adReady}</div></div>`;
+  return card;
+}
+
+async function showAdForCard(card){
+  const adId=card.dataset.adId;
+  if(adShowing||shownAdBreaks.has(adId))return;
+  shownAdBreaks.add(adId);
+  adShowing=true;
+  card.classList.add('in-view');
+  const status=card.querySelector('.ad-card-status');
+  if(status)status.textContent=STRINGS[lang].adReady;
+  const shown=await showInterstitialAd();
+  if(!shown && status)status.textContent=STRINGS[lang].adSkipped;
+  adShowing=false;
+}
+
 let lastTap=0;function doubleTap(card,e){const now=Date.now();if(now-lastTap<300){const h=document.createElement('div');h.textContent='❤️';h.style.cssText=`position:absolute;z-index:20;left:${e.clientX-card.getBoundingClientRect().left}px;top:${e.clientY-card.getBoundingClientRect().top}px;transform:translate(-50%,-50%);font-size:70px;pointer-events:none;animation:heart .75s ease forwards`;card.appendChild(h);setLiked(true);h.addEventListener('animationend',()=>h.remove())}lastTap=now}
 function setLiked(on){document.getElementById('likeBtn').style.color=on?'#F55D5D':'';tg?.HapticFeedback?.impactOccurred?.('light')}
-function wireObserver(){if(observer)observer.disconnect();observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{const card=entry.target,v=card.querySelector('video');if(entry.isIntersecting&&entry.intersectionRatio>.6){v.play().catch(()=>{});card.classList.add('in-view');currentCardIndex=Number(card.dataset.position);const item=videos[Number(card.dataset.videoIndex)];document.getElementById('likeCount').textContent=item.likes||'';checkTimer();maybeExtend()}else v.pause()})},{threshold:[0,.6,1]});feed.querySelectorAll('.card').forEach(c=>observer.observe(c))}
-function pauseCurrent(){const c=feed.querySelector(`[data-position="${currentCardIndex}"]`);c?.querySelector('video')?.pause()}
-function checkTimer(){if(unlocked&&Date.now()>=nextAdAt&&!adShowing&&!gate.classList.contains('show'))openTimedGate()}
-function maybeExtend(){if(currentCardIndex>=sequence.length-5){const base=sequence.length;for(let j=0;j<videos.length;j++)sequence.push((selectedIndex+j)%videos.length);for(let p=base;p<sequence.length;p++)feed.appendChild(buildCard(sequence[p],p));wireObserver()}}
-feed.addEventListener('scroll',()=>{if(unlocked)checkTimer()},{passive:true});
+function wireObserver(){
+  if(observer)observer.disconnect();
+  observer=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      const card=entry.target;
+      if(!entry.isIntersecting||entry.intersectionRatio<=.6)return;
+
+      currentCardIndex=Number(card.dataset.position);
+
+      if(card.dataset.type==='ad'){
+        pauseAllVideosExcept(null);
+        showAdForCard(card);
+        return;
+      }
+
+      const v=card.querySelector('video');
+      if(v){
+        v.play().catch(()=>{});
+        card.classList.add('in-view');
+      }
+
+      const item=videos[Number(card.dataset.videoIndex)];
+      document.getElementById('likeCount').textContent=item?.likes||'';
+      pauseAllVideosExcept(v);
+      maybeExtend();
+    });
+
+    entries.forEach(entry=>{
+      if(!entry.isIntersecting||entry.intersectionRatio<=.2)return;
+      if(entry.target.dataset.type==='video' && Number(entry.target.dataset.position)!==currentCardIndex){
+        entry.target.querySelector('video')?.pause();
+      }
+    });
+  },{threshold:[0,.2,.6,1]});
+
+  feed.querySelectorAll('.card,.ad-card').forEach(c=>observer.observe(c));
+}
+
+function pauseAllVideosExcept(keep){
+  feed.querySelectorAll('video').forEach(v=>{if(v!==keep)v.pause()});
+}
+
+function pauseCurrent(){
+  const c=feed.querySelector(`[data-position="${currentCardIndex}"]`);
+  if(c?.dataset.type==='video')c.querySelector('video')?.pause();
+}
+
+function maybeExtend(){
+  if(currentCardIndex<sequence.length-7)return;
+  const base=sequence.length;
+  const cycleStart=videos.length;
+  for(let j=0;j<videos.length;j++){
+    const position=sequence.length;
+    sequence.push({type:'video',videoIndex:(selectedIndex+j)%videos.length});
+    if((j+1)%AD_EVERY_VIDEOS===0){
+      adBreakCounter++;
+      sequence.push({type:'ad',adId:`ad-${adBreakCounter+cycleStart}`});
+    }
+  }
+  for(let p=base;p<sequence.length;p++){
+    const item=sequence[p];
+    feed.appendChild(item.type==='video'?buildCard(item.videoIndex,p):buildAdCard(item.adId,p));
+  }
+  wireObserver();
+}
+
+feed.addEventListener('scroll',()=>{}, {passive:true});
 
 document.getElementById('shareBtn').onclick=async()=>{const url=location.href;try{if(navigator.share)await navigator.share({title:'Zena Clips',url});else await navigator.clipboard.writeText(url)}catch{}};
 document.getElementById('likeBtn').onclick=()=>setLiked(true);
@@ -307,7 +421,7 @@ function celebrate(){document.getElementById('rewardToast').classList.add('show'
 
 const style=document.createElement('style');style.textContent='@keyframes heart{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-50%) scale(.9)}}';document.head.appendChild(style);
 
-async function init(){applyTheme();applyI18n();loadingState.classList.add('show');try{await loadVideos();loadingState.classList.remove('show');if(!videos.length){emptyState.classList.add('show');return}renderContentPicker();initAdsgram()}catch(e){loadingState.classList.remove('show');emptyState.classList.add('show');console.error(e)}}
+async function init(){applyTheme();applyI18n();loadingState.classList.add('show');try{await loadVideos();loadingState.classList.remove('show');if(!videos.length){emptyState.classList.add('show');return}renderContentPicker();initAdsgramInterstitial()}catch(e){loadingState.classList.remove('show');emptyState.classList.add('show');console.error(e)}}
 init();
 </script>
 </body>
