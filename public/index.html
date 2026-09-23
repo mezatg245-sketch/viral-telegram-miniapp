@@ -249,50 +249,138 @@ const feed=document.getElementById('feed'),welcome=document.getElementById('welc
 const loadingState=document.getElementById('loadingState'),emptyState=document.getElementById('emptyState'),statRail=document.getElementById('statRail'),progressDots=document.getElementById('progressDots');
 
 async function loadVideos(){
-  const res=await fetch(`${API_BASE}/api/videos?limit=50&offset=0`,{cache:'no-store'});
-  if(!res.ok)throw new Error('Could not load videos');
-  videos=await res.json();
-  videos=videos.map((v,i)=>({...v,displayTitle:titleForVideo(v,i)}));
-  const hero=videos[0];
-  if(hero){document.getElementById('heroTitle').innerHTML=`${hero.displayTitle.replace(/(VIP|Trending|New|Moments|Vibes)/gi,'<span>$1</span>')}`;}
+  const batchSize=50;
+  try{
+    // Ask the server for the real total first. This lets us fetch all published
+    // videos in parallel instead of stopping at the first 50.
+    let total=null;
+    try{
+      const health=await fetch(`${API_BASE}/api/health`,{cache:'no-store'});
+      if(health.ok){
+        const data=await health.json();
+        if(Number.isFinite(Number(data.videos))) total=Number(data.videos);
+      }
+    }catch(e){
+      console.warn('Health check unavailable; falling back to paged loading',e);
+    }
+
+    let batches=[];
+    if(total!==null){
+      const requests=[];
+      for(let offset=0;offset<total;offset+=batchSize){
+        requests.push(
+          fetch(`${API_BASE}/api/videos?limit=${batchSize}&offset=${offset}`,{cache:'no-store'})
+            .then(res=>{if(!res.ok)throw new Error(`Video request failed at offset ${offset}`);return res.json()})
+        );
+      }
+      batches=await Promise.all(requests);
+    }else{
+      let offset=0;
+      while(true){
+        const res=await fetch(`${API_BASE}/api/videos?limit=${batchSize}&offset=${offset}`,{cache:'no-store'});
+        if(!res.ok)throw new Error('Could not load videos');
+        const batch=await res.json();
+        if(!Array.isArray(batch)||batch.length===0)break;
+        batches.push(batch);
+        if(batch.length<batchSize)break;
+        offset+=batchSize;
+      }
+    }
+
+    videos=batches.flat().map((v,i)=>({...v,displayTitle:titleForVideo(v,i)}));
+    console.log(`Loaded ${videos.length} published videos`);
+
+    const hero=videos[0];
+    if(hero){
+      document.getElementById('heroTitle').innerHTML=`${hero.displayTitle.replace(/(VIP|Trending|New|Moments|Vibes)/gi,'<span>$1</span>')}`;
+    }
+  }catch(e){
+    console.error('Failed to load videos:',e);
+    videos=[];
+    throw e;
+  }
 }
 function safeText(el,text){el.textContent=text||''}
 const thumbnailCache=new Map();
+const thumbnailJobs=new Map();
 function createThumbnail(src,done){
   if(thumbnailCache.has(src)){done(thumbnailCache.get(src));return}
+  if(thumbnailJobs.has(src)){thumbnailJobs.get(src).push(done);return}
+
+  thumbnailJobs.set(src,[done]);
+  const finish=(data)=>{
+    thumbnailJobs.get(src)?.forEach(cb=>cb(data));
+    thumbnailJobs.delete(src);
+    if(data)thumbnailCache.set(src,data);
+  };
+
   const probe=document.createElement('video');
-  probe.src=src;probe.muted=true;probe.playsInline=true;probe.preload='metadata';probe.setAttribute('crossorigin','anonymous');
+  probe.src=src;
+  probe.muted=true;
+  probe.playsInline=true;
+  probe.preload='metadata';
+  probe.setAttribute('aria-hidden','true');
   let finished=false;
+
   const capture=()=>{
     if(finished||!probe.videoWidth||!probe.videoHeight)return;
     finished=true;
     try{
       const canvas=document.createElement('canvas');
-      const maxW=720;
+      const maxW=480;
       const scale=Math.min(1,maxW/probe.videoWidth);
       canvas.width=Math.max(1,Math.round(probe.videoWidth*scale));
       canvas.height=Math.max(1,Math.round(probe.videoHeight*scale));
       const ctx=canvas.getContext('2d');
       ctx.drawImage(probe,0,0,canvas.width,canvas.height);
-      const data=canvas.toDataURL('image/jpeg',.74);
-      thumbnailCache.set(src,data);
-      done(data);
-    }catch(e){console.warn('thumbnail capture failed',e)}
+      finish(canvas.toDataURL('image/jpeg',.68));
+    }catch(e){
+      console.warn('thumbnail capture failed',e);
+      finish('');
+    }finally{
+      probe.removeAttribute('src');
+      probe.load();
+    }
   };
+
   probe.addEventListener('loadeddata',()=>{
     try{
-      if(probe.duration&&isFinite(probe.duration)&&probe.duration>.15){probe.currentTime=Math.min(.15,probe.duration*.05)}else capture();
+      if(probe.duration&&isFinite(probe.duration)&&probe.duration>.15){
+        probe.currentTime=Math.min(.15,probe.duration*.05);
+      }else capture();
     }catch(e){capture()}
   },{once:true});
   probe.addEventListener('seeked',capture,{once:true});
-  probe.addEventListener('error',()=>{finished=true;done('');},{once:true});
+  probe.addEventListener('error',()=>{if(!finished){finished=true;finish('')}},{once:true});
   probe.load();
 }
 
 function attachThumbnail(target,src){
   createThumbnail(src,data=>{
-    if(data){target.style.backgroundImage=`url("${data}")`;target.classList.add('ready')}
+    if(data){
+      target.style.backgroundImage=`url("${data}")`;
+      target.classList.add('ready');
+    }
   });
+}
+
+let pickerThumbObserver=null;
+function observePickerThumbs(){
+  if(pickerThumbObserver)pickerThumbObserver.disconnect();
+  pickerThumbObserver=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(!entry.isIntersecting)return;
+      const target=entry.target;
+      const src=target.dataset.thumbSrc;
+      if(src){
+        attachThumbnail(target,src);
+        target.removeAttribute('data-thumb-src');
+      }
+      pickerThumbObserver.unobserve(target);
+    });
+  },{root:contentGrid,rootMargin:'300px 0px',threshold:0.01});
+
+  contentGrid.querySelectorAll('.content-thumb[data-thumb-src]').forEach(el=>pickerThumbObserver.observe(el));
 }
 
 function renderContentPicker(){
@@ -305,7 +393,7 @@ function renderContentPicker(){
     const vid=document.createElement('video');vid.src=v.streamUrl;vid.muted=true;vid.playsInline=true;vid.preload='none';vid.setAttribute('aria-hidden','true');
     const shimmer=document.createElement('div');shimmer.className='thumb-loading';shimmer.innerHTML='<span>🎬</span>';
     thumb.append(vid,shimmer);
-    attachThumbnail(thumb,v.streamUrl);
+    thumb.dataset.thumbSrc=v.streamUrl;
     const info=document.createElement('div');info.className='content-info';
     const title=document.createElement('div');title.className='content-title';safeText(title,v.displayTitle);
     const meta=document.createElement('div');meta.className='content-meta';safeText(meta,v.caption?`${v.creator||'Zena Clips'} • ${v.caption}`:(v.creator||'Zena Clips'));
@@ -315,6 +403,7 @@ function renderContentPicker(){
     item.onclick=()=>{selectedIndex=i;document.querySelectorAll('.content-item').forEach(x=>x.classList.remove('selected'));item.classList.add('selected');renderStartButton()};
     contentGrid.appendChild(item)
   });
+  observePickerThumbs();
   renderStartButton()
 }
 function renderStartButton(){startBtn.textContent=videos.length?(STRINGS[lang].startReady):STRINGS[lang].startWatching;startBtn.disabled=!videos.length}
